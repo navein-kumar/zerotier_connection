@@ -36,7 +36,7 @@ fi
 # Check SSH status
 sudo systemctl status ssh
 #disable ufw
-ufw disable
+sudo ufw disable
 
 sudo apt install curl -y
 
