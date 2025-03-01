@@ -16,4 +16,7 @@ sudo iptables -A FORWARD -j ACCEPT
 sudo iptables -t nat -A POSTROUTING -o ztliuxnmeq -j MASQUERADE 
 sudo iptables -A FORWARD -i ens18 -o ztliuxnmeq -m state --state RELATED,ESTABLISHED -j ACCEPT 
 sudo iptables -A FORWARD -i ztliuxnmeq -o ens18 -j ACCEPT
---
+
+## set persitance rule
+sudo apt install iptables-persistent
+sudo bash -c iptables-save > /etc/iptables/rules.v4
