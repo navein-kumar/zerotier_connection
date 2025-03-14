@@ -1,0 +1,11 @@
+zerotier-idtool initmoon /var/lib/zerotier-one/identity.public >> moon.json
+
+zerotier-idtool genmoon moon.json
+
+mkdir moons.d/
+
+mv moonfile to moons.d/
+
+chown -R zerotiner-one: moons.d/
+
+systemctl restart zerotier-one
