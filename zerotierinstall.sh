@@ -46,8 +46,9 @@ curl -s https://install.zerotier.com | sudo bash
 zerotier-cli join 147d0d4e547bfec4
 zerotier-cli info
 
-wget https://github.com/navein-kumar/zerotier_connection/raw/refs/heads/main/000000de09e496d3.moon 
-mkdir /var/lib/zerotier-one/moons.d/
-cp 000000de09e496d3.moon /var/lib/zerotier-one/moons.d/
-chown -R zerotier-one: /var/lib/zerotier-one/moons.d/
-sudo systemctl restart zerotier-one
+#fast network speed
+#wget https://github.com/navein-kumar/zerotier_connection/raw/refs/heads/main/000000de09e496d3.moon 
+#mkdir /var/lib/zerotier-one/moons.d/
+#cp 000000de09e496d3.moon /var/lib/zerotier-one/moons.d/
+#chown -R zerotier-one: /var/lib/zerotier-one/moons.d/
+#sudo systemctl restart zerotier-one
