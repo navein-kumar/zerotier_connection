@@ -19,4 +19,12 @@ sudo iptables -A FORWARD -i ztliuxnmeq -o ens18 -j ACCEPT
 
 ## set persitance rule
 sudo apt install iptables-persistent
-sudo bash -c iptables-save > /etc/iptables/rules.v4
+sudo systemctl enable iptables
+sudo iptables-save > /etc/iptables/rules.v4
+
+#tunnel only to moons
+sudo iptables -A OUTPUT -p udp --dport 9993 -j DROP
+sudo iptables -I OUTPUT -p udp -d 194.146.13.235 --dport 9993 -j ACCEPT
+sudo apt install iptables-persistent
+sudo netfilter-persistent save
+sudo systemctl enable netfilter-persistent
