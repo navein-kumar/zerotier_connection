@@ -1,5 +1,23 @@
 zerotier-idtool initmoon /var/lib/zerotier-one/identity.public >> moon.json
 
+--edit moon update ip--
+
+{
+ "id": "eaa0c27839",
+ "objtype": "world",
+ "roots": [
+  {
+   "identity": "eaa0c27839:0:ca9f7209ce0334b52010ee69f501eb09f45ce0642ff07291e343aa0f27f79965a28bbffdab6deb2f677801d14d9112f717d48bbfb041d9734ce618f71df8044f",
+   "stableEndpoints": ["194.146.13.235/9993"]
+  }
+ ],
+ "signingKey": "869e777d9105fc2cc7c5c1937c77e7ae853a08c208cb9234fa5249778cdf1565e4c0db1369fb89867a3154fd8bd33cd88f28b94da75aae2fa4767d5c24ce8061",
+ "signingKey_SECRET": "0c76fa6266b66fa0b9d25a3d0c52004c03402584b419a5c6dc327584aaf1cbb36ab092d2e530cc9d9d3f16580062b85b613642d43e4ab8c42a1c0d9907c42a9e",
+ "updatesMustBeSignedBy": "869e777d9105fc2cc7c5c1937c77e7ae853a08c208cb9234fa5249778cdf1565e4c0db1369fb89867a3154fd8bd33cd88f28b94da75aae2fa4767d5c24ce8061",
+ "worldType": "moon"
+}
+
+----
 zerotier-idtool genmoon moon.json
 
 mkdir moons.d/
