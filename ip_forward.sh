@@ -21,7 +21,49 @@ sudo iptables -A FORWARD -i ztliuxnmeq -o ens18 -j ACCEPT
 sudo apt install iptables-persistent
 sudo systemctl enable iptables
 sudo iptables-save > /etc/iptables/rules.v4
+----------------------
+kali below
+---------------------
+# Enable NAT (MASQUERADE) for outbound traffic from both interfaces
+sudo iptables -t nat -A POSTROUTING -o ztliuubgwp -j MASQUERADE
+sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 
+# Accept incoming connections on both interfaces that are related/established
+sudo iptables -A INPUT -i eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+sudo iptables -A INPUT -i ztliuubgwp -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+# Allow all traffic forwarding between eth0 and ztliuubgwp
+sudo iptables -A FORWARD -i eth0 -o ztliuubgwp -j ACCEPT
+sudo iptables -A FORWARD -i ztliuubgwp -o eth0 -j ACCEPT
+---
+save reboot --
+sudo nano /etc/rc.local
+
+#!/bin/bash
+sudo iptables -t nat -A POSTROUTING -o ztliuubgwp -j MASQUERADE
+sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+sudo iptables -A INPUT -i eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+sudo iptables -A INPUT -i ztliuubgwp -m state --state RELATED,ESTABLISHED -j ACCEPT
+sudo iptables -A FORWARD -i eth0 -o ztliuubgwp -j ACCEPT
+sudo iptables -A FORWARD -i ztliuubgwp -o eth0 -j ACCEPT
+exit 0
+
+sudo chmod +x /etc/rc.local
+
+sudo systemctl stop apparmor && sudo systemctl disable apparmor
+
+--
+cat /proc/sys/net/ipv4/ip_forward = 1
+echo 1 | sudo tee /proc/sys/net/ipv4/ip_forward
+
+sudo nano /etc/sysctl.conf
+net.ipv4.ip_forward=1
+sudo sysctl -p
+sudo nano /etc/sysctl.d/99-custom.conf
+net.ipv4.ip_forward=1
+sudo sysctl --system
+
+---------------------
 #tunnel only to moons
 sudo iptables -A OUTPUT -p udp --dport 9993 -j DROP
 sudo iptables -I OUTPUT -p udp -d 194.146.13.235 --dport 9993 -j ACCEPT
