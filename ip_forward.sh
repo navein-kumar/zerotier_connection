@@ -1,3 +1,4 @@
+--Ubuntu----
 vim /etc/sysctl.conf
 #out 
 net.ipv4.ip_forward = 1
@@ -22,7 +23,7 @@ sudo apt install iptables-persistent
 sudo systemctl enable iptables
 sudo iptables-save > /etc/iptables/rules.v4
 ----------------------
-kali below
+--kali below---
 ---------------------
 # Enable NAT (MASQUERADE) for outbound traffic from both interfaces
 sudo iptables -t nat -A POSTROUTING -o ztliuubgwp -j MASQUERADE
@@ -35,8 +36,8 @@ sudo iptables -A INPUT -i ztliuubgwp -m state --state RELATED,ESTABLISHED -j ACC
 # Allow all traffic forwarding between eth0 and ztliuubgwp
 sudo iptables -A FORWARD -i eth0 -o ztliuubgwp -j ACCEPT
 sudo iptables -A FORWARD -i ztliuubgwp -o eth0 -j ACCEPT
----
-save reboot --
+--------------------------------------------------------
+save reboot ----
 sudo nano /etc/rc.local
 
 #!/bin/bash
@@ -63,7 +64,7 @@ sudo nano /etc/sysctl.d/99-custom.conf
 net.ipv4.ip_forward=1
 sudo sysctl --system
 
----------------------
+-------------------------------------------------------------------
 #tunnel only to moons
 sudo iptables -A OUTPUT -p udp --dport 9993 -j DROP
 sudo iptables -I OUTPUT -p udp -d 194.146.13.235 --dport 9993 -j ACCEPT
