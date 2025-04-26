@@ -25,15 +25,14 @@ sudo iptables-save > /etc/iptables/rules.v4
 ----------------------
 --kali below---
 ---------------------
-# Enable NAT (MASQUERADE) for outbound traffic from both interfaces
+echo buster | sudo tee /etc/debian_version >/dev/null
+curl -s https://install.zerotier.com | sudo bash
+echo $DV_SAVE | sudo tee /etc/debian_version >/dev/null
+--
 sudo iptables -t nat -A POSTROUTING -o ztliuubgwp -j MASQUERADE
 sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-
-# Accept incoming connections on both interfaces that are related/established
 sudo iptables -A INPUT -i eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
 sudo iptables -A INPUT -i ztliuubgwp -m state --state RELATED,ESTABLISHED -j ACCEPT
-
-# Allow all traffic forwarding between eth0 and ztliuubgwp
 sudo iptables -A FORWARD -i eth0 -o ztliuubgwp -j ACCEPT
 sudo iptables -A FORWARD -i ztliuubgwp -o eth0 -j ACCEPT
 --------------------------------------------------------
