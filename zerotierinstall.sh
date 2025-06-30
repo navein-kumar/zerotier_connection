@@ -43,7 +43,7 @@ sudo apt install curl -y
 #install zerotier
 curl -s https://install.zerotier.com | sudo bash
 #join zerotier network
-zerotier-cli join 147d0d4e547bfec4
+zerotier-cli join 147d0d4e54c3df12
 zerotier-cli info
 
 #fast network speed
