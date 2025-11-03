@@ -8,7 +8,7 @@ set -e  # Exit on any error
 # =============================================================================
 # CONFIGURATION VARIABLES - MODIFY THESE AS NEEDED
 # =============================================================================
-ZEROTIER_INTERFACE="ztliuubgwp"    # Change this to your ZeroTier interface name
+ZEROTIER_INTERFACE="ztaagi5gty"    # Change this to your ZeroTier interface name
 ETHERNET_INTERFACE="eth0"          # Change this to your ethernet interface name
 # =============================================================================
 
