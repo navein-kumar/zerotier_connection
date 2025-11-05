@@ -18,11 +18,11 @@ echo "Ethernet Interface: $ETHERNET_INTERFACE"
 echo ""
 
 # Step 1: Install ZeroTier
-echo "Installing ZeroTier..."
-DV_SAVE=$(cat /etc/debian_version)
-echo buster | sudo tee /etc/debian_version >/dev/null
-curl -s https://install.zerotier.com | sudo bash
-echo $DV_SAVE | sudo tee /etc/debian_version >/dev/null
+#echo "Installing ZeroTier..."
+#DV_SAVE=$(cat /etc/debian_version)
+#echo buster | sudo tee /etc/debian_version >/dev/null
+#curl -s https://install.zerotier.com | sudo bash
+#echo $DV_SAVE | sudo tee /etc/debian_version >/dev/null
 
 # Step 2: Configure iptables rules
 echo "Configuring iptables rules..."
