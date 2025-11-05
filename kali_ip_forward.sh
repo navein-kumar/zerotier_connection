@@ -8,7 +8,7 @@ set -e  # Exit on any error
 # =============================================================================
 # CONFIGURATION VARIABLES - MODIFY THESE AS NEEDED
 # =============================================================================
-ZEROTIER_INTERFACE="ztaagi5gty"    # Change this to your ZeroTier interface name
+ZEROTIER_INTERFACE="ztuzevxbmw"    # Change this to your ZeroTier interface name
 ETHERNET_INTERFACE="eth0"          # Change this to your ethernet interface name
 # =============================================================================
 
@@ -32,6 +32,15 @@ sudo iptables -A INPUT -i $ETHERNET_INTERFACE -m state --state RELATED,ESTABLISH
 sudo iptables -A INPUT -i $ZEROTIER_INTERFACE -m state --state RELATED,ESTABLISHED -j ACCEPT
 sudo iptables -A FORWARD -i $ETHERNET_INTERFACE -o $ZEROTIER_INTERFACE -j ACCEPT
 sudo iptables -A FORWARD -i $ZEROTIER_INTERFACE -o $ETHERNET_INTERFACE -j ACCEPT
+# ADD THESE LINES for gateway itself:
+sudo iptables -A INPUT -p tcp -j ACCEPT
+sudo iptables -A INPUT -p udp -j ACCEPT  
+sudo iptables -A INPUT -p icmp -j ACCEPT
+sudo iptables -A OUTPUT -p tcp -j ACCEPT
+sudo iptables -A OUTPUT -p udp -j ACCEPT
+sudo iptables -A OUTPUT -p icmp -j ACCEPT
+sudo iptables -A INPUT -i lo -j ACCEPT
+sudo iptables -A OUTPUT -o lo -j ACCEPT
 
 # Step 3: Make iptables rules persistent via rc.local
 echo "Creating persistent iptables configuration..."
@@ -44,6 +53,15 @@ sudo iptables -A INPUT -i $ETHERNET_INTERFACE -m state --state RELATED,ESTABLISH
 sudo iptables -A INPUT -i $ZEROTIER_INTERFACE -m state --state RELATED,ESTABLISHED -j ACCEPT
 sudo iptables -A FORWARD -i $ETHERNET_INTERFACE -o $ZEROTIER_INTERFACE -j ACCEPT
 sudo iptables -A FORWARD -i $ZEROTIER_INTERFACE -o $ETHERNET_INTERFACE -j ACCEPT
+# ADD THESE LINES for gateway itself:
+sudo iptables -A INPUT -p tcp -j ACCEPT
+sudo iptables -A INPUT -p udp -j ACCEPT  
+sudo iptables -A INPUT -p icmp -j ACCEPT
+sudo iptables -A OUTPUT -p tcp -j ACCEPT
+sudo iptables -A OUTPUT -p udp -j ACCEPT
+sudo iptables -A OUTPUT -p icmp -j ACCEPT
+sudo iptables -A INPUT -i lo -j ACCEPT
+sudo iptables -A OUTPUT -o lo -j ACCEPT
 exit 0
 EOF
 
