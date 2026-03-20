@@ -1,103 +1,122 @@
 #!/bin/bash
-
-# ZeroTier Gateway Setup Script
-# This script installs ZeroTier and configures the system as a network gateway
-
-set -e  # Exit on any error
+set -e
 
 # =============================================================================
-# CONFIGURATION VARIABLES - MODIFY THESE AS NEEDED
+# CONFIGURATION VARIABLES - EDIT THESE AS NEEDED
 # =============================================================================
-ZEROTIER_INTERFACE="ztuzevxbmw"    # Change this to your ZeroTier interface name
-ETHERNET_INTERFACE="eth0"          # Change this to your ethernet interface name
+ZEROTIER_INTERFACE="zttwh34l4w"       # ZeroTier virtual interface
+ZT_NAT_INTERFACE="eth0"               # NAT adapter (ZeroTier internet path)
+CLIENT_INTERFACE="eth1"               # Bridged adapter (client network)
+BLACKLIST_INTERFACES="eth1,docker"    # Comma-separated interfaces to block from ZeroTier
 # =============================================================================
 
-echo "Starting ZeroTier Gateway Setup..."
-echo "ZeroTier Interface: $ZEROTIER_INTERFACE"
-echo "Ethernet Interface: $ETHERNET_INTERFACE"
+echo "[*] ZeroTier VAPT Gateway Setup - FULL OPEN MODE"
+echo "    ZT Interface    : $ZEROTIER_INTERFACE"
+echo "    NAT Interface   : $ZT_NAT_INTERFACE"
+echo "    Client Interface: $CLIENT_INTERFACE"
+echo "    ZT Blacklist    : $BLACKLIST_INTERFACES"
 echo ""
 
-# Step 1: Install ZeroTier
-#echo "Installing ZeroTier..."
-#DV_SAVE=$(cat /etc/debian_version)
-#echo buster | sudo tee /etc/debian_version >/dev/null
-#curl -s https://install.zerotier.com | sudo bash
-#echo $DV_SAVE | sudo tee /etc/debian_version >/dev/null
-
-# Step 2: Configure iptables rules
-echo "Configuring iptables rules..."
-sudo iptables -t nat -A POSTROUTING -o $ZEROTIER_INTERFACE -j MASQUERADE
-sudo iptables -t nat -A POSTROUTING -o $ETHERNET_INTERFACE -j MASQUERADE
-sudo iptables -A INPUT -i $ETHERNET_INTERFACE -m state --state RELATED,ESTABLISHED -j ACCEPT
-sudo iptables -A INPUT -i $ZEROTIER_INTERFACE -m state --state RELATED,ESTABLISHED -j ACCEPT
-sudo iptables -A FORWARD -i $ETHERNET_INTERFACE -o $ZEROTIER_INTERFACE -j ACCEPT
-sudo iptables -A FORWARD -i $ZEROTIER_INTERFACE -o $ETHERNET_INTERFACE -j ACCEPT
-# ADD THESE LINES for gateway itself:
-sudo iptables -A INPUT -p tcp -j ACCEPT
-sudo iptables -A INPUT -p udp -j ACCEPT  
-sudo iptables -A INPUT -p icmp -j ACCEPT
-sudo iptables -A OUTPUT -p tcp -j ACCEPT
-sudo iptables -A OUTPUT -p udp -j ACCEPT
-sudo iptables -A OUTPUT -p icmp -j ACCEPT
-sudo iptables -A INPUT -i lo -j ACCEPT
-sudo iptables -A OUTPUT -o lo -j ACCEPT
-
-# Step 3: Make iptables rules persistent via rc.local
-echo "Creating persistent iptables configuration..."
-sudo tee /etc/rc.local > /dev/null << EOF
-#!/bin/bash
-# ZeroTier Gateway iptables rules
-sudo iptables -t nat -A POSTROUTING -o $ZEROTIER_INTERFACE -j MASQUERADE
-sudo iptables -t nat -A POSTROUTING -o $ETHERNET_INTERFACE -j MASQUERADE
-sudo iptables -A INPUT -i $ETHERNET_INTERFACE -m state --state RELATED,ESTABLISHED -j ACCEPT
-sudo iptables -A INPUT -i $ZEROTIER_INTERFACE -m state --state RELATED,ESTABLISHED -j ACCEPT
-sudo iptables -A FORWARD -i $ETHERNET_INTERFACE -o $ZEROTIER_INTERFACE -j ACCEPT
-sudo iptables -A FORWARD -i $ZEROTIER_INTERFACE -o $ETHERNET_INTERFACE -j ACCEPT
-# ADD THESE LINES for gateway itself:
-sudo iptables -A INPUT -p tcp -j ACCEPT
-sudo iptables -A INPUT -p udp -j ACCEPT  
-sudo iptables -A INPUT -p icmp -j ACCEPT
-sudo iptables -A OUTPUT -p tcp -j ACCEPT
-sudo iptables -A OUTPUT -p udp -j ACCEPT
-sudo iptables -A OUTPUT -p icmp -j ACCEPT
-sudo iptables -A INPUT -i lo -j ACCEPT
-sudo iptables -A OUTPUT -o lo -j ACCEPT
-exit 0
-EOF
-
-sudo chmod +x /etc/rc.local
-
-# Step 4: Disable AppArmor (if it interferes)
-echo "Disabling AppArmor..."
-sudo systemctl stop apparmor 2>/dev/null || true
-sudo systemctl disable apparmor 2>/dev/null || true
-
-# Step 5: Enable IP forwarding
-echo "Enabling IP forwarding..."
+# Step 1: IP Forwarding
+echo "[*] Enabling IP forwarding..."
 echo 1 | sudo tee /proc/sys/net/ipv4/ip_forward > /dev/null
-
-# Make IP forwarding persistent in sysctl.conf
 if ! grep -q "net.ipv4.ip_forward=1" /etc/sysctl.conf; then
     echo "net.ipv4.ip_forward=1" | sudo tee -a /etc/sysctl.conf > /dev/null
 fi
-
-# Also create custom sysctl configuration
-sudo tee /etc/sysctl.d/99-custom.conf > /dev/null << 'EOF'
-# Enable IP forwarding for ZeroTier gateway
+sudo tee /etc/sysctl.d/99-zerotier-gw.conf > /dev/null << 'EOF'
 net.ipv4.ip_forward=1
 EOF
-
-# Apply sysctl changes
 sudo sysctl -p
 sudo sysctl --system
 
-echo "ZeroTier Gateway setup completed successfully!"
+# Step 2: Flush all existing rules
+echo "[*] Flushing existing iptables rules..."
+sudo iptables -F
+sudo iptables -t nat -F
+sudo iptables -t mangle -F
+sudo iptables -X
+
+# Step 3: Set default policies to ACCEPT
+echo "[*] Setting default policies to ACCEPT..."
+sudo iptables -P INPUT ACCEPT
+sudo iptables -P FORWARD ACCEPT
+sudo iptables -P OUTPUT ACCEPT
+
+# Step 4: MASQUERADE for routing
+echo "[*] Applying MASQUERADE rules..."
+sudo iptables -t nat -A POSTROUTING -o $CLIENT_INTERFACE -j MASQUERADE
+sudo iptables -t nat -A POSTROUTING -o $ZT_NAT_INTERFACE -j MASQUERADE
+
+# Step 5: ZeroTier local.conf - build blacklist from variable
+echo "[*] Configuring ZeroTier interface blacklist..."
+
+# Convert comma-separated string to JSON array
+# e.g. "eth1,docker" -> ["eth1","docker"]
+IFS=',' read -ra BL_ARRAY <<< "$BLACKLIST_INTERFACES"
+JSON_ARRAY=$(printf '"%s",' "${BL_ARRAY[@]}" | sed 's/,$//')
+
+sudo tee /var/lib/zerotier-one/local.conf > /dev/null << EOF
+{
+  "settings": {
+    "interfacePrefixBlacklist": [$JSON_ARRAY]
+  }
+}
+EOF
+
+echo "    ZT local.conf written: [$JSON_ARRAY]"
+
+# Step 6: Save iptables rules script
+echo "[*] Creating iptables rules script..."
+sudo tee /etc/iptables-vapt-rules.sh > /dev/null << EOF
+#!/bin/bash
+iptables -F
+iptables -t nat -F
+iptables -t mangle -F
+iptables -P INPUT ACCEPT
+iptables -P FORWARD ACCEPT
+iptables -P OUTPUT ACCEPT
+iptables -t nat -A POSTROUTING -o $CLIENT_INTERFACE -j MASQUERADE
+iptables -t nat -A POSTROUTING -o $ZT_NAT_INTERFACE -j MASQUERADE
+EOF
+sudo chmod +x /etc/iptables-vapt-rules.sh
+
+# Step 7: Create systemd service
+echo "[*] Creating systemd persistence service..."
+sudo tee /etc/systemd/system/iptables-vapt.service > /dev/null << EOF
+[Unit]
+Description=VAPT ZeroTier Gateway iptables Rules
+After=network.target zerotier-one.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/bash /etc/iptables-vapt-rules.sh
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl enable iptables-vapt.service
+
+# Step 8: Restart ZeroTier
+echo "[*] Restarting ZeroTier..."
+sudo systemctl restart zerotier-one
+sleep 5
+
+# Step 9: Verify
 echo ""
-echo "Next steps:"
-echo "1. Join your ZeroTier network: sudo zerotier-cli join <NETWORK_ID>"
-echo "2. Authorize this device in your ZeroTier Central dashboard"
-echo "3. Configure this device as a gateway in ZeroTier Central"
-echo "4. Verify connectivity with: zerotier-cli info"
+echo "[+] Setup Complete! Verification:"
+echo "--- Default Policies ---"
+sudo iptables -L | grep -E "Chain|policy"
+echo "--- NAT Rules ---"
+sudo iptables -t nat -L POSTROUTING -n -v
+echo "--- IP Forwarding ---"
+cat /proc/sys/net/ipv4/ip_forward
+echo "--- ZeroTier local.conf ---"
+cat /var/lib/zerotier-one/local.conf
+echo "--- ZeroTier Peers ---"
+sudo zerotier-cli listpeers
 echo ""
-echo "Note: Configured for ZeroTier interface '$ZEROTIER_INTERFACE' and Ethernet interface '$ETHERNET_INTERFACE'"
-echo "If these interface names are incorrect, edit the variables at the top of this script"
+echo "[+] LHOST (eth1) : $(ip addr show $CLIENT_INTERFACE | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)"
+echo "[+] ZeroTier IP  : $(ip addr show $ZEROTIER_INTERFACE | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)"
